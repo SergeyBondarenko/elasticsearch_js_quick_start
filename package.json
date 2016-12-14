@@ -1,0 +1,8 @@
+{
+  "name": "starter-elasticsearch",
+  "main": "server.js",
+  "dependencies": {
+    "elasticsearch": "^12.1.2",
+    "string-template": "^1.0.0"
+  }
+}
