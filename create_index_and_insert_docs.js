@@ -3,7 +3,7 @@
 var elasticsearch = require('elasticsearch');
 var format = require('string-template');
 
-var ES_INDEX_NAME = 'speceship_project',
+var ES_INDEX_NAME = 'spaceship_project',
     ES_PORT = 9220,
     ES_HOST = 'localhost',
     ES_DOC_TYPE = 'spaceship',
