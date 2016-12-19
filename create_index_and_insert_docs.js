@@ -1,52 +1,46 @@
 'use strict';
 
 var elasticsearch = require('elasticsearch');
-var format = require('string-template');
 
-var ES_INDEX_NAME = 'spaceship_project',
+var ES_INDEX_NAME = 'other_places',
     ES_PORT = 9220,
     ES_HOST = 'localhost',
-    ES_DOC_TYPE = 'spaceship',
-    LOG_NAME = 'trace';
+    ES_DOC_TYPE = 'my_city',
+    LOG_NAME = 'trace',
+    WITH_MAPPING = false;
 
 var ES_DOCS = [
   {
     id: '1', 
-    title: ES_DOC_TYPE, 
-    label: 'Fuselage', 
-    produced_date: '2010-09-05', 
-    end_of_work_date: '2030-09-05'
+    city: 'New York',
   },
   {
     id: '2', 
-    title: ES_DOC_TYPE, 
-    label: ['Pumps', 'Oxidizer'], 
-    produced_date: ['2015-01-01', '2016-02-01'], 
-    end_of_work_date: ['2022-01-01', '2022-02-01']
-  },
-  {
-    id: '3', 
-    title: ES_DOC_TYPE,
-    label: ['Engine', 'Nozzle', 'Exhaust'], 
-    produced_date: ['2013-01-01', '2014-02-01', '2016-04-07'], 
-    end_of_work_date: ['2023-01-01', '2024-02-01', '2026-04-07']
+    city: 'York',
   }
 ];
+
+var ES_MAPPINGS = {
+  "mappings": {
+    "my_city": {
+      "properties": {
+        "city": {
+          "type": "string",
+        }
+      }
+    }
+  }
+};
 
 function indice_doc_into_es(client, doc, callback) {
   client.create({
     index: ES_INDEX_NAME,
     type: ES_DOC_TYPE,
     id: doc.id,
-    body: {
-      title: doc.title,
-      label: doc.label,
-      produced_date: doc.produced_date,
-      end_of_work_date: doc.end_of_work_date
-    }
+    body: doc 
   }, function (error, response) {
     if (error) {
-      console.log(format('Error: {0}', error));
+      console.log('Error: ' + error);
     } else {
       console.log(response);
     }
@@ -64,7 +58,7 @@ function search_index (client, query) {
     q: query
   }, function (error, response) {
     if (error) {
-      console.log(format('Error: {0}', error));
+      console.log('Error: ' + error);
     } else {
       console.log(response);
     }
@@ -73,7 +67,7 @@ function search_index (client, query) {
 
 // init ES client API
 var client = new elasticsearch.Client({
-  host: format('{0}:{1}', [ES_HOST, ES_PORT]),
+  host: ES_HOST + ':' + ES_PORT,
   log: LOG_NAME
 });
 
@@ -82,29 +76,46 @@ client.indices.delete({
   index: ES_INDEX_NAME,
   ignore: [404]
 }).then(function () {
-  console.log(format('The index {0} was deleted!', ES_INDEX_NAME));
+  console.log('The index ' + ES_INDEX_NAME + ' was deleted!');
 }, function (error) {
-  console.log(format('Error: {0}', error));
+  console.log('Error: ' + error);
 });
 
-// create index
-client.indices.create({
-  index: ES_INDEX_NAME,
-  ignore: [404]
-}).then(function () {
-  console.log(format('The index {0} has been created!', ES_INDEX_NAME));
+if (WITH_MAPPING) {
+  // create index
+  client.indices.putMapping({
+    index: ES_INDEX_NAME,
+    type: ES_DOC_TYPE,
+    body: ES_MAPPINGS
+  }, function () {
+    console.log('The index ' + ES_INDEX_NAME + ' has been created!');
 
-  var doc;
-  // insert documents
-  for (doc in ES_DOCS) {
-    if (ES_DOCS.hasOwnProperty(doc)) {
-      indice_doc_into_es(client, ES_DOCS[doc]);
+    var doc;
+    // insert documents
+    for (doc in ES_DOCS) {
+      if (ES_DOCS.hasOwnProperty(doc)) {
+        indice_doc_into_es(client, ES_DOCS[doc]);
+      }
     }
-  }
+  });
+}
 
-}, function (error) {
-  console.log(format('Error: {0}', error));
-});
-
-
-
+if (!WITH_MAPPING) {
+  // create index
+  client.indices.create({
+    index: ES_INDEX_NAME,
+    ignore: [404]
+  }).then(function () {
+    console.log('The index ' + ES_INDEX_NAME + ' has been created!');
+  
+    var doc;
+    // insert documents
+    for (doc in ES_DOCS) {
+      if (ES_DOCS.hasOwnProperty(doc)) {
+        indice_doc_into_es(client, ES_DOCS[doc]);
+      }
+    }
+  }, function (error) {
+    console.log('Error: ' + error);
+  });
+}
