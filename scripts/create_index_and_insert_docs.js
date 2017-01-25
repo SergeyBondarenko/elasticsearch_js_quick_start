@@ -19,7 +19,11 @@ if (DELETE_INDEX) {
     index: ES_INDEX_NAME,
     ignore: [404]
   }).then(() => {
-    createIndex(client, processDocuments(client, DOCUMENTS));
+
+    Promise.all([createIndex(client)]).then(() => {
+      processDocuments(client, DOCUMENTS);
+    });
+
   }, (error) => {
     console.log(`DELETE INDEX: ${error}`);
   });
@@ -27,32 +31,24 @@ if (DELETE_INDEX) {
   processDocuments(client, DOCUMENTS);
 }
 
-function createIndex(client, callback) {
+function createIndex(client) {
   client.indices.create({
     index: ES_INDEX_NAME,
   }).then((response) => {
-    console.log(response);
-
-    if (callback) {
-      callback();
-    }
+    console.log(`CREATE INDEX RESPONSE: ${response}`);
   }, (error) => {
     console.log(`CREATE INDEX: ${error}`);
   });
 }
 
-function indexDoc(client, doc, type, callback) {
+function indexDoc(client, doc, type) {
   client.index({
     index: ES_INDEX_NAME,
     type: type,
     id: doc.id,
     body: doc
   }).then((response) => {
-    console.log(response);
-
-    if (callback) {
-      callback();
-    }
+    console.log(`INDEX DOC RESPONSE: ${response}`);
   }, (error) => {
     console.log(`INDEX DOC: ${error}`);
   });
