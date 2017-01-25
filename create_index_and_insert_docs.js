@@ -1,52 +1,38 @@
 'use strict';
 
-var elasticsearch = require('elasticsearch');
-var format = require('string-template');
+const elasticsearch = require('elasticsearch');
+const DOCUMENTS = require('./documents.json');
 
-var ES_INDEX_NAME = 'speceship_project',
-    ES_PORT = 9220,
-    ES_HOST = 'localhost',
-    ES_DOC_TYPE = 'spaceship',
-    LOG_NAME = 'trace';
+const ES_INDEX_NAME = 'spaceship_project';
+const ES_PORT = 9200;
+const ES_HOST = 'localhost';
+const LOG_NAME = 'trace';
+const DELETE_INDEX = true;
 
-var ES_DOCS = [
-  {
-    id: '1', 
-    title: ES_DOC_TYPE, 
-    label: 'Fuselage', 
-    produced_date: '2010-09-05', 
-    end_of_work_date: '2030-09-05'
-  },
-  {
-    id: '2', 
-    title: ES_DOC_TYPE, 
-    label: ['Pumps', 'Oxidizer'], 
-    produced_date: ['2015-01-01', '2016-02-01'], 
-    end_of_work_date: ['2022-01-01', '2022-02-01']
-  },
-  {
-    id: '3', 
-    title: ES_DOC_TYPE,
-    label: ['Engine', 'Nozzle', 'Exhaust'], 
-    produced_date: ['2013-01-01', '2014-02-01', '2016-04-07'], 
-    end_of_work_date: ['2023-01-01', '2024-02-01', '2026-04-07']
-  }
-];
+const client = new elasticsearch.Client({
+  host: `${ES_HOST}:${ES_PORT}`,
+  log: LOG_NAME
+});
 
-function indice_doc_into_es(client, doc, callback) {
-  client.create({
+if (DELETE_INDEX) {
+  client.indices.delete({
     index: ES_INDEX_NAME,
-    type: ES_DOC_TYPE,
-    id: doc.id,
-    body: {
-      title: doc.title,
-      label: doc.label,
-      produced_date: doc.produced_date,
-      end_of_work_date: doc.end_of_work_date
-    }
-  }, function (error, response) {
+    ignore: [404]
+  }).then(() => {
+
+    createIndex(client, processDocuments(client, DOCUMENTS));
+
+  }, (error) => {
+    console.log(`DELETE INDEX: ${error}`);
+  });
+}
+
+function createIndex(client, callback) {
+  client.indices.create({
+    index: ES_INDEX_NAME,
+  }, (error, response) => {
     if (error) {
-      console.log(format('Error: {0}', error));
+      console.log(`CREATE INDEX: ${error}`);
     } else {
       console.log(response);
     }
@@ -57,54 +43,35 @@ function indice_doc_into_es(client, doc, callback) {
   }
 }
 
-function search_index (client, query) {
-  console.log('DOCUMENTS:');
-  client.search({
+function indexDoc(client, doc, type, callback) {
+  client.index({
     index: ES_INDEX_NAME,
-    q: query
-  }, function (error, response) {
+    type: type,
+    id: doc.id,
+    body: doc
+  }, (error, response) => {
     if (error) {
-      console.log(format('Error: {0}', error));
+      console.log(`INDEX DOC: ${error}`);
     } else {
       console.log(response);
     }
   });
+
+  if (callback) {
+    callback();
+  }
 }
 
-// init ES client API
-var client = new elasticsearch.Client({
-  host: format('{0}:{1}', [ES_HOST, ES_PORT]),
-  log: LOG_NAME
-});
-
-// delete index
-client.indices.delete({
-  index: ES_INDEX_NAME,
-  ignore: [404]
-}).then(function () {
-  console.log(format('The index {0} was deleted!', ES_INDEX_NAME));
-}, function (error) {
-  console.log(format('Error: {0}', error));
-});
-
-// create index
-client.indices.create({
-  index: ES_INDEX_NAME,
-  ignore: [404]
-}).then(function () {
-  console.log(format('The index {0} has been created!', ES_INDEX_NAME));
-
-  var doc;
-  // insert documents
-  for (doc in ES_DOCS) {
-    if (ES_DOCS.hasOwnProperty(doc)) {
-      indice_doc_into_es(client, ES_DOCS[doc]);
+function processDocuments(client, docs) {
+  for (const i in docs.spaceship_parts) {
+    if (docs.spaceship_parts.hasOwnProperty(i)) {
+      indexDoc(client, JSON.stringify(docs.spaceship_parts[i]), 'spaceship_parts');
     }
   }
-
-}, function (error) {
-  console.log(format('Error: {0}', error));
-});
-
-
+  for (const i in docs.spaceship_service) {
+    if (docs.spaceship_service.hasOwnProperty(i)) {
+      indexDoc(client, JSON.stringify(docs.spaceship_service[i]), 'spaceship_service');
+    }
+  }
+}
 
