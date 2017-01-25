@@ -1,46 +1,38 @@
 'use strict';
 
-var elasticsearch = require('elasticsearch');
+const elasticsearch = require('elasticsearch');
+const DOCUMENTS = require('./documents.json');
 
-var ES_INDEX_NAME = 'other_places',
-    ES_PORT = 9220,
-    ES_HOST = 'localhost',
-    ES_DOC_TYPE = 'my_city',
-    LOG_NAME = 'trace',
-    WITH_MAPPING = false;
+const ES_INDEX_NAME = 'spaceship_project';
+const ES_PORT = 9200;
+const ES_HOST = 'localhost';
+const LOG_NAME = 'trace';
+const DELETE_INDEX = true;
 
-var ES_DOCS = [
-  {
-    id: '1', 
-    city: 'New York',
-  },
-  {
-    id: '2', 
-    city: 'York',
-  }
-];
+const client = new elasticsearch.Client({
+  host: `${ES_HOST}:${ES_PORT}`,
+  log: LOG_NAME
+});
 
-var ES_MAPPINGS = {
-  "mappings": {
-    "my_city": {
-      "properties": {
-        "city": {
-          "type": "string",
-        }
-      }
-    }
-  }
-};
-
-function indice_doc_into_es(client, doc, callback) {
-  client.create({
+if (DELETE_INDEX) {
+  client.indices.delete({
     index: ES_INDEX_NAME,
-    type: ES_DOC_TYPE,
-    id: doc.id,
-    body: doc 
-  }, function (error, response) {
+    ignore: [404]
+  }).then(() => {
+
+    createIndex(client, processDocuments(client, DOCUMENTS));
+
+  }, (error) => {
+    console.log(`DELETE INDEX: ${error}`);
+  });
+}
+
+function createIndex(client, callback) {
+  client.indices.create({
+    index: ES_INDEX_NAME,
+  }, (error, response) => {
     if (error) {
-      console.log('Error: ' + error);
+      console.log(`CREATE INDEX: ${error}`);
     } else {
       console.log(response);
     }
@@ -51,71 +43,35 @@ function indice_doc_into_es(client, doc, callback) {
   }
 }
 
-function search_index (client, query) {
-  console.log('DOCUMENTS:');
-  client.search({
+function indexDoc(client, doc, type, callback) {
+  client.index({
     index: ES_INDEX_NAME,
-    q: query
-  }, function (error, response) {
+    type: type,
+    id: doc.id,
+    body: doc
+  }, (error, response) => {
     if (error) {
-      console.log('Error: ' + error);
+      console.log(`INDEX DOC: ${error}`);
     } else {
       console.log(response);
     }
   });
+
+  if (callback) {
+    callback();
+  }
 }
 
-// init ES client API
-var client = new elasticsearch.Client({
-  host: ES_HOST + ':' + ES_PORT,
-  log: LOG_NAME
-});
-
-// delete index
-client.indices.delete({
-  index: ES_INDEX_NAME,
-  ignore: [404]
-}).then(function () {
-  console.log('The index ' + ES_INDEX_NAME + ' was deleted!');
-}, function (error) {
-  console.log('Error: ' + error);
-});
-
-if (WITH_MAPPING) {
-  // create index
-  client.indices.putMapping({
-    index: ES_INDEX_NAME,
-    type: ES_DOC_TYPE,
-    body: ES_MAPPINGS
-  }, function () {
-    console.log('The index ' + ES_INDEX_NAME + ' has been created!');
-
-    var doc;
-    // insert documents
-    for (doc in ES_DOCS) {
-      if (ES_DOCS.hasOwnProperty(doc)) {
-        indice_doc_into_es(client, ES_DOCS[doc]);
-      }
+function processDocuments(client, docs) {
+  for (const i in docs.spaceship_parts) {
+    if (docs.spaceship_parts.hasOwnProperty(i)) {
+      indexDoc(client, JSON.stringify(docs.spaceship_parts[i]), 'spaceship_parts');
     }
-  });
+  }
+  for (const i in docs.spaceship_service) {
+    if (docs.spaceship_service.hasOwnProperty(i)) {
+      indexDoc(client, JSON.stringify(docs.spaceship_service[i]), 'spaceship_service');
+    }
+  }
 }
 
-if (!WITH_MAPPING) {
-  // create index
-  client.indices.create({
-    index: ES_INDEX_NAME,
-    ignore: [404]
-  }).then(function () {
-    console.log('The index ' + ES_INDEX_NAME + ' has been created!');
-  
-    var doc;
-    // insert documents
-    for (doc in ES_DOCS) {
-      if (ES_DOCS.hasOwnProperty(doc)) {
-        indice_doc_into_es(client, ES_DOCS[doc]);
-      }
-    }
-  }, function (error) {
-    console.log('Error: ' + error);
-  });
-}
