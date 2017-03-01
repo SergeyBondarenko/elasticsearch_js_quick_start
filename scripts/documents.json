@@ -1,4 +1,31 @@
 {
+  "spaceship": [
+    {
+      "label": "Fuselage",
+      "produced_date": "2010-09-05",
+      "end_of_work_date": "2050-05-25"
+    },
+    {
+      "label": "Pumps",
+      "produced_date": "2015-01-01",
+      "end_of_work_date": "2022-01-01"
+    },
+    {
+      "label": "Oxidizer",
+      "produced_date": "2016-02-01",
+      "end_of_work_date": "2022-02-01"
+    },
+    {
+      "label": "Engine",
+      "produced_date": "2013-01-01",
+      "end_of_work_date": "2023-01-01"
+    },
+    {
+      "label": "Nozzle",
+      "produced_date": "2014-02-01",
+      "end_of_work_date": "2024-02-01"
+    }
+  ],
   "spaceship_parts": [
     {
       "item_id": 1,
