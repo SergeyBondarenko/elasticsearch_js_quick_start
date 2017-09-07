@@ -1,7 +1,7 @@
 const es = require('elasticsearch');
-const chicagoCrimesMappings = require('./datasets/chicago_crimes_mappings');
+const mappings = require('./datasets/creditcard');
 
-const INDEX = 'chicago_crimes';
+const INDEX = 'credit_card';
 const TYPE = 'logs';
 const HOST = 'localhost:9200';
 const LOG = 'trace';
@@ -22,7 +22,7 @@ client.indices.delete({
   return client.indices.putMapping({
     index: INDEX,
     type: TYPE,
-    body: chicagoCrimesMappings
+    body: mappings
   });
 }).catch(err => {
   console.log('ERROR:');
