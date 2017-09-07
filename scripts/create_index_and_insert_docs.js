@@ -1,7 +1,7 @@
 'use strict';
 
 const elasticsearch = require('elasticsearch');
-const DOCUMENTS = require('./documents.json');
+const DOCUMENTS = require('./datasets/documents.json');
 
 const ES_INDEX_NAME = 'spaceship_project';
 const ES_PORT = 9200;

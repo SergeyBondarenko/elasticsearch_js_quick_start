@@ -2,6 +2,6 @@
   "name": "starter-elasticsearch",
   "main": "server.js",
   "dependencies": {
-    "elasticsearch": "^12.1.2"
+    "elasticsearch": "^13.3.1"
   }
 }
