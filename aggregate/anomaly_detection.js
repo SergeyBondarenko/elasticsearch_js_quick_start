@@ -11,13 +11,6 @@ const client = new es.Client({
 });
 
 const BODY = {
-  aggs: {
-    amount_outlier: {
-      percentiles: {
-        field: 'Amount'
-      }
-    }
-  }
 };
 
 client.search({

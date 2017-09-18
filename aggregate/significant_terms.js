@@ -1,6 +1,6 @@
 const es = require('elasticsearch');
 
-const INDEX = 'credit_card';
+const INDEX = 'chicago_crimes';
 const TYPE = 'logs';
 const HOST = 'localhost:9200';
 const LOG = 'trace';
@@ -11,10 +11,17 @@ const client = new es.Client({
 });
 
 const BODY = {
-  aggs: {
-    amount_outlier: {
-      percentiles: {
-        field: 'Amount'
+  aggregations: {
+    locations: {
+      terms: {
+        field: 'Location_Description'
+      },
+      aggregations: {
+        significant_crime_types: {
+          significant_terms: {
+            field: 'Primary_Type'
+          }
+        }
       }
     }
   }

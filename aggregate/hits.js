@@ -12,9 +12,27 @@ const client = new es.Client({
 
 const BODY = {
   aggs: {
-    amount_outlier: {
-      percentiles: {
-        field: 'Amount'
+    top_amounts: {
+      terms: {
+        field: 'Amount',
+        size: 3
+      },
+      aggs: {
+        top_time: {
+          top_hits: {
+            sort: [
+              {
+                Time: {
+                  order: 'asc'
+                }
+              }
+            ],
+            _source: {
+              includes: [ 'Amount', 'Time', 'Class']
+            },
+            size: 2
+          }
+        }
       }
     }
   }
